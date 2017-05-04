@@ -1,7 +1,15 @@
-#
-#
-# 
+
 require './objects.rb'
+require 'csv' 
+
+n=4# Is the number  of events 
+t=0.05
+lamda=(n/t)*(t/1000)#INTERVAL time of bus at every station
+
+#Mean Arrival Time = 5 minutes = 5/60th hours
+#Mean Arrival Rate = 60/5 = 12 customers per hour
+#inter_arrival_time = 8/10 # If 10  buses arrive at station  every 8 hours, the time between each arrival is;
+
 
 def calc_interval(number_events)
 	interval = 60.0/number_events # temporal solution, IMPROVE
@@ -11,7 +19,7 @@ end
 
 
 class Eventlist
-	attr_accessor :events,:path,:station_id1,:station_id2
+	attr_accessor :events
 
 	def initialize()
 		@events = Array.new
@@ -41,48 +49,60 @@ class Eventlist
   
   # arrival and departure bus events
   
-  def create_BUSARRIVAL(time0,station_id,bus_id)# defining   bus movement model with parameterlist
+  def create_BUSARRIVAL(time0,bus_id,stat_id1,stat_id2)# defining   bus movement model with parameterlist
   		# Creating Events
-  		info = [station_id,bus_id]
-  		event = [time0, "BUSARRIVAL", info] # [TIME, EVENT_TYPE, INFORMATION]
+  		info = [bus_id,stat_id1,stat_id2]
+  		event = [time0,"BUSARRIVAL", info] # [TIME, EVENT_TYPE, INFORMATION]
   		@events.push(event)
   	end
   
   
-  def create_BUSDEPART(time1,station_id,bus_id)# defining   bus movement model with parameterlist
+  def create_BUSDEPART(time1,bus_id,stati_id1,stati_id2)# defining   bus movement model with parameterlist
     # Creating Events
-  	info = [station_id,bus_id]
-  	event = [time1, "BUSDEPART", info] # [TIME, EVENT_TYPE, INFORMATION]
+  	info = [bus_id,stati_id1,stati_id2]
+  	event = [time1,"BUSDEPART", info] # [TIME, EVENT_TYPE, INFORMATION]
   	@events.push(event)
   end 
-   
-  def create_STOP(time3,station_id,bus_id)# defining   bus movement model with parameterlist
+  
+  def create_BUSSTOP(time1,bus_id,statio_id1)# defining   bus movement model with parameterlist
     # Creating Events
-  	info = [station_id,bus_id]
+  	info = [bus_id,statio_id1]
+  	event = [time1,"BUSSTOP", info] # [TIME, EVENT_TYPE, INFORMATION]
+  	@events.push(event)
+  end 
+  
+  # create data transmisiion from station to bus 
+  
+	def create_TRANSDATASTATION(time0, data_id,bus_id,data_size, station_id)
+		# Creating Events
+		info = [time0, data_id,bus_id, data_size, station_id]
+		event = [time0, "TRANSDATASTATION", info] # [TIME, EVENT_TYPE, INFORMATION]
+		@events.push(event)
+	end
+  
+	def create_RECVDATABUS(time1, data_id,bus_id,data_size,station_id)
+		# Creating Events
+		info = [time1, data_id,bus_id,data_size, station_id]
+		event = [time1, "RECVDATABUS", info] # [TIME, EVENT_TYPE, INFORMATION]
+		@events.push(event)
+	end
+=begin  
+  def create_STOP(time3,station_id)# defining   bus movement model with parameterlist
+    # Creating Events
+  	info = [station_id]
   	event = [time3, "BUSSTOP", info] # [TIME, EVENT_TYPE, INFORMATION]
   	@events.push(event)
   end
   
-  def create_MOVE(time4,station_id,bus_id)# defining   bus movement model with parameterlist
+  def create_MOVE(time4,station_id)# defining   bus movement model with parameterlist
     # Creating Events
-  	info = [station_id,bus_id]
+  	info = [station_id]
   	event = [time4, "BUSSTOP", info] # [TIME, EVENT_TYPE, INFORMATION]
   	@events.push(event)
   end
-  
-  # add path for the bus 
-	def add_path(station_id1,station_id2, minutes)
-		action = ["MOVE", station_id1, station_id2, minutes]
-		@path.push(action)
-	end
+=end 
 
-	def add_stop(station_id,bus_id,minutes)
-		action = ["STOP",station_id,bus_id,minutes]
-		@path.push(action)
-	end
   
-  
-
 	def sort()
 		@events = @events.sort do |a,b| a[0] <=> b[0] end
 	end
@@ -119,9 +139,10 @@ end
 
 
 # Initialization
+SIMULATION_DURATION=860.0
 NUM_STATIONS=4
 NUM_SENSORS=10
-NUM_BUSES=4
+NUM_BUSES=2
 TIME_FINISH = 180 # Finish time in Seconds
 TOTAL_TIME_TRAVEL=110
 
@@ -147,7 +168,9 @@ for i in 0..(NUM_STATIONS-1) do
 end
 
 # Event: Data generation
+
 eventlist = Eventlist.new()
+eventlist.sort()
 count_data = 0
 list_stations.each do |station|
 	sensors = station.get_sensors()
@@ -202,12 +225,16 @@ eventlist.events.each do |event|
 
 end
 
-
 eventlist.sort()
 eventlist.events.each do |event|
-  p event
-end
+  #p event
+end 
 
+### Test output
+#eventlist.sort()
+#eventlist.events.each do |event|
+#  p event
+#end
 #eventlist.print()
 
 
@@ -217,115 +244,187 @@ end
 # Bus preparation, Array for keeping bus instances
 
 #@list_buses=Array.new
+
+
+#p path[0]
+# bus-001 arrival and stopping  time at station A 
+#p current  
+#p path 
+
 list_buses = Array.new # for bus instances
+#file=File.new("")
 # creating bus array objects 
 bus1 = Bus.new("bus-001")
 bus2 = Bus.new("bus-002")
-bus3 = Bus.new("bus-003")
-bus4 = Bus.new("bus-004")
+#exit
 
 
+#p list_stations
 
 
-def getstationid(bus_id)
-  @bus_id=bus_id
-  return bus_id
-end
-=begin
-def bus1.add_path(station_id1, station_id2,miutes)# station_id 
-def bus1.add_stop(station_id1, bus_id,minutes)# station_id
-def bus2.add_path(station_id1, station_id2,minutes)#
-def bus2.add_stop(station_id2, bus_id,minutes)
-def bus3.add_path(station_id1, station_id2,minutes)# station_id 
-def bus3.add_stop(station_id1, bus_id,minurtes)# station_id
-def bus4.add_path(station_id2, station_id1,minutes)#
-def bus4.add_stop(station_id1, bus_id,minutes)#
-end
-end
-end
-end
-end
-end
-end
-end
-=end 
+bus1.add_path("station-001", "station-002",60)# station_id 
+bus1.add_stop("station-002",30)# station_id
 
- bus1.add_path(@station_id1, @station_id2,20)# station_id 
- bus1.add_stop(@station_id2, @bus_id,40)# station_id
- bus2.add_path(@station_id1, @station_id2,20)#
- bus2.add_stop(@station_id2, @bus_id,60)
- bus3.add_path(@station_id1, @station_id2,20)# station_id 
- bus3.add_stop(@station_id1, @bus_id,80)# station_id
- bus4.add_path(@station_id1, @station_id2,20)#
- bus4.add_stop(@station_id1, @bus_id,110)#
- 
- 
+bus1.add_path("station-002", "station-003",60)# station_id 
+bus1.add_stop("station-003",30)# station_id
 
- 
- 
- 
+bus1.add_path("station-003", "station-004",60)# station_id 
+bus1.add_stop("station-004",30)# station_id
+
+bus1.add_path("station-004", "station-001",60)# station_id 
+bus1.add_stop("station-001",30)# station_id
 
 
+bus2.add_path("station-003","station-004",60)#
+bus2.add_stop("station-004",30)
+
+bus2.add_path("station-004","station-001",60)#
+bus2.add_stop("station-001",30)
+
+bus2.add_path("station-001","station-002",60)#
+bus2.add_stop("station-002",30)
+
+bus2.add_path("station-002","station-003",60)#
+bus2.add_stop("station-003",30)
+
+#list_buses=[bus1,bus2]
+
+bus1_path=bus1.get_path()
+bus2_path=bus2.get_path()
 
 
-
-
-
-
-
-# Bus Arriva/,Bus Departure and Bus stop event generation 
-eventlist =  Eventlist.new()
-list_buses = [bus1, bus2, bus3, bus4]
-count_bus = 0
-time=0.0
-
-list_buses.each do |bus|
-  list_stations.each do |station|
-  
-  while(time < TOTAL_TIME_TRAVEL)
-    bus_id = sprintf("bus%08d", count_bus)
-    count_bus+= 1
-   
-    #list_buses = bus.create_bus(bus_id)
-    #interval = bus.calc_interval()
-			# Creating Events
-      
-      time = TOTAL_TIME_TRAVEL+5
-		  eventlist.create_BUSARRIVAL(time,station_id,bus_id)
-
-		  time1 = TOTAL_TIME_TRAVEL+25
-		  eventlist.create_BUSDEPART(time1, station_id,bus_id)
-
-		  time2 =TOTAL_TIME_TRAVEL+35
-		  eventlist.create_STOP(time2,station_id,bus_id)
-
-		  time3 =TOTAL_TIME_TRAVEL+50
-		  eventlist.create_MOVE(time3, station_id,bus_id)
-
-      end
-      p bus
-      #p station
-      #p list_buses
-    end
-  end 
+#p bus_path
+current=0
 eventlist.sort()
 eventlist.events.each do |event|
-  p event
-  #p bus
+  #p event
   end
+[bus1_path, bus2_path].each do |bus_path|
+  #100.times do |x|
+  bus_path.each do |path|
+    
+    if (path[0]=='STOP') then
+    	  eventlist.create_BUSSTOP(current,path[1], path[2])
+        current=path[3]+current
+      end
+   
+    if(path[0]=='MOVE') then
+      current=path[4]+current
+      eventlist.create_BUSDEPART(current, path[1],path[2], path[3])
+       current=path[4]+current
+      
+      eventlist.create_BUSARRIVAL(current, path[1],path[2], path[3])
+      current=path[4]+current
+      current+=path[4]
+     
+      end 
+    end 
+   
+  end 
+   
+  #end
+#end 
+#end 
+  
+  
+    # Data transmission Event from station To bus within specific data size 
+    
+    
+    
+eventlist.sort()
+eventlist.events.each do |event|
+  [bus1_path, bus2_path].each do |bus_path|
+    bus_path.each do |path|   
+      if path[0] =='MOVE' 
+        #bus_id = event[2][0]
+        #p bus_id
+        #station_id1=event[2][1]
+        #p station_id
+    
+       if  event[1]=='GENDATA' 
+         data_id =event[2][0]
+         #p data_id
+         data_size=event[2][2]
+         #p  data_size
+  
+        time0 = event[0]# time generated during the data generation 
+        eventlist.create_TRANSDATASTATION(time0,path[1],path[2],data_id,data_size)
+
+        time1 = time0+1
+        eventlist.create_RECVDATABUS(time1,path[1],path[2],data_id,data_size)
+   end 
+ end
+end 
+end
+end
+#end 
+ 
+
+
+  #end
+
+     
+eventlist.sort()
+eventlist.events.each do |event|
+ #p event
+
+  #p event
+  #for i in 0..(SIMULATION_DURATION) do
+  
+
+  if (event[1] == "GENDATA") then
+    printf"#{event[0]},#{event[1]},#{event[2][0]},#{event[2][1]},#{event[2][2]},#{event[2][3]}\n"
+  end
+  if (event[1] == "TRANSDATA") then
+    printf"#{event[2][0]},#{event[1]},#{event[2][1]},#{event[2][2]},#{event[2][3]},#{event[2][4]}\n"
+  end
+  if (event[1] == "RECVDATA") then
+    printf"#{event[2][0]},#{event[1]},#{event[2][1]},#{event[2][2]},#{event[2][3]},#{event[2][4]}\n"
+  end
+
+  
+  if (event[1] == "BUSARRIVAL") then
+    printf"#{event[0]},#{event[1]},#{event[2][0]},#{event[2][1]},#{event[2][2]}\n"
+  end
+
+  if (event[1] == "BUSDEPART") then
+    printf"#{event[0]},#{event[1]},#{event[2][0]},#{event[2][1]},#{event[2][2]}\n"
+  end
+
+  if (event[1] == "BUSSTOP") then
+    printf"#{event[0]},#{event[1]},#{event[2][0]},#{event[2][1]}\n"
+   
+  end
+=begin
+  if (event[1] == "TRANSDATASTATION") then
+    printf"#{event[0]},#{event[1]},#{event[2][1]},#{event[2][2]},#{event[2][3]},#{event[2][4]}\n"
+  end
+  if (event[1] == "RECVDATABUS") then
+    printf"#{event[0]},#{event[1]},#{event[2][1]},#{event[2][2]},#{event[2][3]},#{event[2][4]}\n"
+  end
+=end 
+end
+
+
+
+  
+           
+
+
+#end 
+
+#end
+
+
+
+
+ 
+
+ 
+
+
+ 
+
   
 
 
-
-
-#nooooteeeee
-# create bus id from  instance id variable ()
-# loop NUM_BUS (for)
-#   bus generation
-#   
-#
-
-# pass = [["StationID", 40], ["
-
-# path = [ ["A", "B". 20], ["B", "B" 30], 
-# create 
